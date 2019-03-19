@@ -1,0 +1,320 @@
+---
+title: "The Dragon Phylogeny"
+output: html_document
+---
+
+# Overview
+
+A phylogeny is a tree that is essentially a hypothesis about the evolutionary relationships among organisms. There are many different methods for building a phylogenetic tree, but all methods are essentially clustering algorithms -- attempts to group objects by their similarity. Modern phylogenies are based on DNA similarity, but in principal we can cluster objects based on any trait we can measure. To look at the process in more detail, let's do a phylogeny of dragons.
+
+The **Dragon Phylogeny** is a project developed when Rob Colautti was a postdoctoral researcher at the University of British Columbia. It was originally developed as a t-shirt [Threadless.com](https://www.threadless.com/designs/dragon-phylogeny), which is out of print now. 
+
+It also generated some media coverage:
+
+  * [io9/Gizmodo Article](https://io9.gizmodo.com/5936427/the-evolutionary-history-of-dragons-illustrated-by-a-scientist) -- A nice write-up about the project on the blog io9.com (now part of Gizmodo).
+  * [CBC.ca Interview](http://www.cbc.ca/news/canada/british-columbia/dragon-family-tree-springs-from-scientist-s-imagination-1.1218358) -- from an interview with CBC radio, later posted on their website.
+
+# Data
+
+The project now lives on at GitHub: https://github.com/ColauttiLab/DragonPhylogeny
+
+## Repository Content:
+
+### Traits
+[Traits.md](./Traits.md)
+List of traits, with coding used in DragonMatrix.net
+
+### Coded Trait Matrix
+[DragonMatrix.nex](./DragonMatrix.nex)
+Binary-coded trait matrix (NEXUS format)
+
+### Weights
+[Weights.csv](./Weights.csv)
+Weightings used on trait matrix, with a brief rationale for each
+
+### Raw Trait Matrix
+[TraitMatrixRaw.csv](./TraitMatrixRaw.csv)
+Trait matrix, raw data, unencoded
+
+## Images
+[Dragon_Pics.pdf](./Dragon_Pics.pdf)
+**NOTE** Large file size (9.4MB)
+PDF containing images of all dragons used in the original Dragon Phylogeny
+
+# Traits
+
+## Images
+The images are available as a pdf file on the Dragon Phylogeny GitHub site:
+[Dragon_Pics.pdf](./Dragon_Pics.pdf)
+**NOTE** This is a large file size (9.4MB). The PDF contains images of all dragons used in the original Dragon Phylogeny
+
+## Scoring
+
+Unfortunately, we don't have any dragon blood to do a DNA-based phylogeny. However, we can try to cluster dragons based on their physical appearance. The first step is to locate some pictures of dragons and choose a common set of traits. I've already done this for you.
+
+```{r, warning=F,message=F,echo=F}
+library(knitr)
+library(kableExtra)
+Traits<-read.csv("TraitMatrixRaw.csv")
+kable(Traits) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  scroll_box(width = "800px", height = "400px")
+```
+
+## Encoding
+
+Now that we've scored the traits, we have to encode them -- in this case we'll use 1s and 0s, with `?` indicating unknown values for the traits that couldn't be observed in some of the photos. The coding is easy for binary traits (present/absent), however most traits are not binary, and we might want coding that will account for inferred evolutionary transitions. For example, if we look at skin type we have several categories:
+
+  * fish scales
+  * spiny
+  * hairy
+  * plates
+  * scaly skin
+  * bumps/ridged skin
+  * smooth
+  
+Now what if we want to encode an evolutionary model that looks like this:
+
+```
+spiny <-- fish scales --> scaly skin  
+  |           |              /   \
+  v           v             v     v
+hairy       plates      smooth   bumpy
+```
+
+We need a coding system where the coding of the derived states is more similar to the ancenstral form than to the other states.
+
+> How would you code these using a binary vector?
+
+Here's how I did it:
+
+```
+100000 <-- 000000 --> 000100  
+  |           |        /   \
+  v           v       v     v
+110000     001000  000110  000101
+```
+
+# Nexus Data File
+
+The file [DragonMatrix.nex](./DragonMatrix.nex) contains the encoded traits, along with a bit more information for specifying the data in a `nexus data file` format.
+
+The last two lines are `;`, which specifies the end of the line, followed by `End;` indicating the end of the file.
+
+The first few lines set up the data format:
+
+```
+#NEXUS
+begin data;
+dimensions ntax=77 nchar=78;
+format datatype=binary interleave=no gap=?;
+matrix
+```
+
+Here's the breakdown:
+
+  * The first line shows us that it's a `#NEXUS` data file
+  * `begin data` specifies the start of the data
+  * The `dimensions` line specifies the number of taxa (n=77 dragons) and characters (t=78 binary trait scores)
+  * The fifth line denotes that the data are arranged in a matrix format.
+  * The `format` line notes that the traits are encoded as binary. The `gap` specifies the symbol used for data gaps -- i.e. missing values. The `interleave=no` specifies that each line contains all of the traits for the dragon. If this were DNA we might have 1000 or more base pairs in our sequence. In that case, we probably wouldn't want a single line of base-pairs. Instead we might break it up into smaller chunks in an `interleave` format, like this:
+  
+```
+Dragon1 TTGTCGAGTGTGCGGCAGCTTAGGTGAATTAAGTCCGGGCAACCTTTAGT
+Dragon2 CAATAGCATACTACCGTGCGAGCCAGCTTATAGGTCGTTGCAGGTTATTA
+Dragon3 ATGTCATTCGCCACGAGACTTTACTAGGGTATCATGCCGAAAGGGGATGG
+
+Dragon1 TGTCCTGTGTGGGAAGTCGTGCCAGGACGGTTACAGCCTTAGCTTGTGCG
+Dragon2 AAGCGAACTGAAGCGGTTGGGAGGATAAGCTTTACACGTGCCCCACAAAG
+Dragon3 AAGCGAACTGAAGCGGTTGGGAGGATAAGCTTTACACGTGCCCCACAAAG
+```
+
+## Import Nexus Data
+
+Now that we're familiar with the file, let's import it using the `read.nexus.data()` function from the `ape` package:
+
+```{r, warning=F,message=F}
+library(ape)
+DragonNexus<-read.nexus.data("DragonMatrix.nex")
+head(DragonNexus)
+names(DragonNexus)
+```
+
+Compare the header of the nexus R object to the layout of the text-based nexus file. What is different? How does R treat the data?
+
+# Distance Matrix
+
+Since we aren't using DNA, we can't use the `dist.dna()` function from `ape`. Instead, we use the more basic `dist()` function, which calculates the similarity/dissimilarity matrix based on our binary traits:
+
+```{r, error=T}
+DragonDistMat<-dist(DragonNexus)
+```
+
+We get an error because the `dist()` function doesn't like the fact that our `DragonNexus` object is a `list`. Looking at the `?dist` help file tells us what kind of input the function is looking for (look at the description of the `x` object)
+
+We can convert a list object to a data.frame object fairly easily:
+
+```{r}
+DragonNexusDF<-data.frame(matrix(unlist(DragonNexus), ncol=78,byrow=T))
+row.names(DragonNexusDF)<-names(DragonNexus)
+head(DragonNexusDF)
+```
+
+```{r}
+DragonDist<-dist(DragonNexusDF)
+DragonDistMat<-as.matrix(DragonDist)
+```
+
+## Visualize
+
+To visualize the matrix in `ggplot`, we need to rearrange the data from an n x n matrix to a n^2 x 3 matrix (linear). This is easiliy done with the `melt` function from the `reshape2` library.
+
+```{r, warning=F,message=F}
+library(reshape2)
+PDat<-melt(DragonDistMat)
+```
+
+Let's look at the difference in dimension (structural layout) of the two data objects. 
+
+```{r}
+dim(DragonDistMat)
+head(DragonDistMat)
+dim(PDat)
+head(PDat)
+```
+
+Now let's plot.
+
+```{r, warning=F,message=F}
+library(ggplot2)
+ggplot(data = PDat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()+scale_fill_gradientn(colours=c("white","blue","green","red")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+Looks like we have a nice range of values to try to cluster by distance. 
+
+# Tree Building
+
+Now that we have a distance matrix, let's try building a phylogeny using the neighbour-joining method.
+
+```{r}
+DragonTree<-nj(DragonDist)
+```
+
+Now let's draw the tree using the `ggtree` library:
+
+```{r, warning=F,message=F}
+library(ggtree)
+ggtree(DragonTree,layout="circular")
+```
+
+```{r}
+ggtree(DragonTree,layout="rectangular")
+```
+
+> Woah, what's going on here?
+
+This tree has some problems. The branches are very long relative to the bifurcations among groups. It is almost as if all the characters are all mixed up. This is what we might expect if dragons were created from active imaginations and didn't really evolve from each other. 
+
+Another reason is that we are treating all traits the same. For example, we treat snout length the same as limb number. However, we might argue that limb length evolves more slowly than snout length, that dragons with the same number of limbs are more likely related than dragons with similar snout lengths. We can do this by weighting our traits. Weights are just numbers that we multiply (or sometimes add) to our data so that traits with higher weights have a stronger influence on our clustering algorithm.
+
+# Weights
+
+The [Weights.csv](./Weights.csv) data table has a set of weights that were used for the Dragon Phylogeny t-shirt design. Let's take a look:
+
+```{r,echo=F}
+WeightsDat<-read.csv("Weights.csv")
+kable(WeightsDat) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  scroll_box(width = "800px", height = "400px")
+```
+
+Weights are scaled on a scale from 1 through 9 and then A (A=10) through Z (Z=35). The number of each digit corresponds to the number of binary values for that trait, and the traits are ordered in the same way they were encoded. There are programs we could use to calculate distance using these as weights (e.g. [BEAST2](http://www.beast2.org/)). However, we'll do it manually to see how it works. All we need to do is multiply each binary value by it's weight. So the first step is to import the weights and extract the weights column. However, that's going to take a few steps:
+
+  1. Create a single vector of weights
+  2. Convert each letter to its corresponding weight value (e.g. A=10, B=11, etc.)
+  3. Multiply the weight value by the trait vector for each dragon
+  4. Re-calculate our distance matrix
+  5. Plot the tree
+
+## 1. Create a single vector of weights.
+
+Easy:
+
+```{r}
+Weights<-paste0(WeightsDat$Weight,collapse="")
+Weights<-strsplit(Weights,split="")[[1]]
+```
+
+## 2. Convert each letter to a value. 
+
+We could encode very single letter individually, or we can use a custom function with the built-in `LETTERS` object:
+
+```{r}
+LETTERS # See what LETTERS is (see also letters)
+which(LETTERS=="G")
+WeightsNum<-rep(NA,length(Weights))
+for(i in 1:length(WeightsNum)){
+  if(Weights[i] %in% LETTERS){
+    WeightsNum[i]<-which(LETTERS==Weights[i])+9
+  } else {
+    WeightsNum[i]<-Weights[i]
+  }
+}
+WeightsNum<-as.numeric(WeightsNum)
+```
+
+Now we have a vector of weights, which should have the same length as the number of 1s and 0s (i.e. 78 'characters'):
+
+```{r}
+length(WeightsNum)
+```
+
+## 3. Multiply the weight value by the trait vector for each dragon.
+
+This is complicated by the fact that our data include missing data coded as `?`, so all of our characters are stored as strings. Since $0*x=0$ and $?*x$ is undefinded, we really just need to multiply the 1s, which is equivalent to replacing the 1s with their corresponding weight values. To do this, we also have to **slice** our list object using the double brackets `[[]]`.
+
+```{r}
+WtDragonNexus<-DragonNexus # Make a new weighted data frame object
+for (i in 1:length(DragonNexus)){
+  RepWeight<-DragonNexus[[i]]==1
+  WtDragonNexus[[i]][RepWeight]<-WeightsNum[RepWeight]
+  RepWeight<-NA
+}
+```
+
+## 4. Re-calculate our distance matrix
+
+We just need to modify our objects
+
+```{r}
+WtDragonNexusDF<-data.frame(matrix(unlist(WtDragonNexus),ncol=78,byrow=T))
+row.names(WtDragonNexusDF)<-names(WtDragonNexus)
+WtDragonDist<-dist(WtDragonNexusDF)
+WtDragonDistMat<-as.matrix(WtDragonDist)
+```
+
+Compare the new distance matrix to the older one above. Note the much stronger structure:
+
+```{r}
+WtPDat<-melt(WtDragonDistMat)
+ggplot(data = WtPDat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()+scale_fill_gradientn(colours=c("white","blue","green","red")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+## 5. Plot the tree
+
+```{r}
+WtDragonTree<-nj(WtDragonDist)
+ggtree(WtDragonTree,layout="circular")
+```
+
+
+
+
+
+
+
+
