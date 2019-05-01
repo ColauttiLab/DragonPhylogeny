@@ -1,8 +1,13 @@
 # DragonPhylogeny
-Repository for the phylogenetic exploration of dragons as depicted in works of art
+This is the official repository for the Dragon Phylogeny Project: a phylogenetic exploration of dragons, dragon-kin and dragonkind, as depicted in historical works of art
 
-# History
-This project began as a diversionary exercise at the tail end of my thesis
+# Support
+This project began as a diversionary exercise at the tail end of Dr. Colautti's PhD Thesis. Following a brief resurrection for an undergraduate tutorial on phylogenies (https://colauttilab.github.io/DragonPhylogenyTutorial.html), this project has been resurrected with the help of several talented and hard-working students.
+
+Thanks to their hard work, we have re-released a slightly modified version of the original t-shirt design: https://dragonphylogeny.threadless.com/
+100% of profits from the t-shirt sales support future development of the Dragon Phylogeny project. 
+
+**Please consider** purchasing a t-shirt or two to show your support.
 
 # Repository Content:
 
