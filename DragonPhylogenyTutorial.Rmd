@@ -9,7 +9,10 @@ A phylogeny is a tree that represents a hypothesis about the evolutionary relati
 
 The **Dragon Phylogeny** is a project developed when [Rob Colautti](https://bit.ly/ColauttiLab) was a postdoctoral researcher at the University of British Columbia. It was originally developed as a t-shirt [Threadless.com](https://www.threadless.com/designs/dragon-phylogeny), which is out of print now. 
 
-It generated some media coverage:
+**HOWEVER** Some recent students have resurrected the project and re-released a slightly different version, which is available at https://dragonphylogeny.threadless.com/ 
+100% of proceeds support the project.
+
+The original design generated some media coverage:
 
   * [io9/Gizmodo Article](https://io9.gizmodo.com/5936427/the-evolutionary-history-of-dragons-illustrated-by-a-scientist) -- A nice write-up about the project on the blog io9.com (now part of Gizmodo).
   * [CBC.ca Interview](http://www.cbc.ca/news/canada/british-columbia/dragon-family-tree-springs-from-scientist-s-imagination-1.1218358) -- from an interview with CBC radio, later posted on their website.
@@ -75,9 +78,10 @@ Here's one way:
 Here is the full list of traits and how they were encoded.
 
 ```{r, warning=F,message=F,echo=F}
-TraitCodes<-read.csv("Data/TraitCodes.csv")
+TraitCodes<-read.csv("Data/TraitCodes.csv",colClasses="character", fileEncoding="UTF-8-BOM")
+names(TraitCodes)
 kable(TraitCodes) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condesed", "responsive")) %>%
   scroll_box(width = "400px", height = "300px")
 ```
 
@@ -217,8 +221,12 @@ Another reason is that we are treating all traits the same. For example, we trea
 
 The [Weights.csv](./Data/Weights.csv) data table has a set of weights that were used for the Dragon Phylogeny t-shirt design. Let's take a look:
 
-```{r,echo=F}
+```{r}
 WeightsDat<-read.csv("Data/Weights.csv")
+```
+
+
+```{r,echo=F}
 kable(WeightsDat) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
   scroll_box(width = "400px", height = "300px")
@@ -285,9 +293,11 @@ We just need to modify our objects
 ```{r}
 WtDragonNexusDF<-data.frame(matrix(unlist(WtDragonNexus),ncol=78,byrow=T))
 row.names(WtDragonNexusDF)<-names(WtDragonNexus)
-WtDragonDist<-dist(WtDragonNexusDF,method='binary')
+WtDragonDist<-dist(WtDragonNexusDF,method='euclidean')
 WtDragonDistMat<-as.matrix(WtDragonDist)
 ```
+
+> Note the change in method from binary to euclidean... why?
 
 Compare the new distance matrix to the older one above. Note the much stronger structure:
 
@@ -334,8 +344,7 @@ head(WtDragonTree$tip.label)
 We can use this to colour-code our tree and see if dragons from the same regions cluster together. We can use regular expressions to parse out a vector:
 
 ```{r}
-Country<-gsub("[0-9\\.]+([^X]+)","\\1",WtDragonTree$tip.label) # Remove leading numbers
-Country<-gsub("X+","",Country) # Remove trailing Xs
+Country<-gsub("[0-9\\.]+([^X]+)X*","\\1",WtDragonTree$tip.label) # Remove leading numbers
 ```
 
 Next we have to group `tip.labels` by their corresponding country. There is a nice function in R called `split` that makes this easy to do:
@@ -363,7 +372,7 @@ ggtree(WtDTcol,layout="circular",aes(colour=group))+geom_tiplab(size=2,aes(angle
 
 As an alternative to colouring by region, we might want to point out a few clades (i.e. groups of dragons that cluster together). For example, it looks like the outer node
 
-```{r}
+```{r, fig.height=6}
 WtDTclade<-groupClade(WtDragonTree,.node=c(142,128,103,90,80))
 ggtree(WtDTclade,layout="circular",aes(colour=group)) + 
   geom_cladelabel(node=142,label="Serpentidae",hjust=0.5,offset.text=4,fontsize=3,angle=-45) +
