@@ -10,6 +10,8 @@ https://dragonphylogeny.threadless.com/
 
 100% of profits from the t-shirt support projects and grants that will help to diversify STEM research, particularly in Ecology and Evolutionary Biology.
 
+# #diversifyEEB
+
 ![Original T-Shirt](./Original_Tshirt.jpg)
 
 # Repository Content:
