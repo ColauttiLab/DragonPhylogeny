@@ -7,19 +7,20 @@ output: html_document
 
 A phylogeny is a tree that represents a hypothesis about the evolutionary relationships among organisms. Connected branches form a 'clade' and shorter connections represent more recent evolutionary divergence compared to long (i.e. deep) branches. There are many different methods for building a phylogenetic tree, but in general, trees are built using clustering algorithms that group objects by some measure of their similarity. Modern phylogenies are based on DNA or protein similarity, but in principal we can cluster objects based on any trait we can measure. To look at the process in more detail, let's do a phylogeny of dragons.
 
-The **Dragon Phylogeny** is a project developed when [Rob Colautti](https://bit.ly/ColauttiLab) was a postdoctoral researcher at the University of British Columbia. It was originally developed as a t-shirt [Threadless.com](https://www.threadless.com/designs/dragon-phylogeny), which is out of print now. 
+The **Dragon Phylogeny** is a project developed when Dr. Colautti https://ecoevogeno.org/ was a postdoctoral researcher at the University of British Columbia. It was originally published as a t-shirt designed for a contest run by the company [Threadless.com](https://www.threadless.com/designs/dragon-phylogeny). The original t-shirt had a limited run. 
 
-**HOWEVER** Some recent students have resurrected the project and re-released a slightly different version, which is available at https://dragonphylogeny.threadless.com/ 
-100% of proceeds support the project.
+**HOWEVER** Some recent students have resurrected the project and are re-releasing a few slightly different versions, available at [DragonPhylogeny.com]((https://www.DragonPhylogeny.org) 
 
-The original design generated some media coverage:
+All of the proceeds support graduate student initiatives in the Biology Department.
+
+The original design generated some media coverage, which include more details about the project:
 
   * [io9/Gizmodo Article](https://io9.gizmodo.com/5936427/the-evolutionary-history-of-dragons-illustrated-by-a-scientist) -- A nice write-up about the project on the blog io9.com (now part of Gizmodo).
   * [CBC.ca Interview](http://www.cbc.ca/news/canada/british-columbia/dragon-family-tree-springs-from-scientist-s-imagination-1.1218358) -- from an interview with CBC radio, later posted on their website.
 
 ## GitHub
 
-The project now lives on at GitHub: https://github.com/ColauttiLab/DragonPhylogeny
+The offical project now lives on at [DragonPhylogeny.org](https://www.DragonPhylogeny.org) (GitHub Repository)
 
 # Scoring Traits
 
